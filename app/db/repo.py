@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from app.schemas import PaymentIntent
 
@@ -129,6 +129,102 @@ def get_dashboard_data() -> Dict[str, Any]:
             {**dict(row), "reasons": json.loads(row["reasons"])} for row in recent_rows
         ],
     }
+
+
+def get_summary() -> Dict[str, Any]:
+    with get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                COALESCE(SUM(CASE WHEN decision = 'APPROVED' THEN amount ELSE 0 END), 0) AS approved_spend,
+                COALESCE(SUM(CASE WHEN decision = 'BLOCKED' THEN amount ELSE 0 END), 0) AS prevented_loss,
+                COALESCE(SUM(CASE WHEN decision = 'BLOCKED' THEN 1 ELSE 0 END), 0) AS blocked_count,
+                COALESCE(SUM(CASE WHEN decision = 'REVIEW_REQUIRED' THEN 1 ELSE 0 END), 0) AS pending_review_count,
+                COALESCE(COUNT(*), 0) AS total_transactions
+            FROM transactions
+            """
+        ).fetchone()
+    return dict(row)
+
+
+def get_spend_by_agent(query: str = "") -> List[Dict[str, Any]]:
+    sql = """
+        SELECT
+            agent_id,
+            ROUND(SUM(CASE WHEN decision = 'APPROVED' THEN amount ELSE 0 END), 2) AS approved_spend,
+            SUM(CASE WHEN decision = 'BLOCKED' THEN 1 ELSE 0 END) AS blocked_attempts,
+            SUM(CASE WHEN decision = 'REVIEW_REQUIRED' THEN 1 ELSE 0 END) AS pending_reviews,
+            COUNT(*) AS total_events
+        FROM transactions
+    """
+    params: List[Any] = []
+    if query:
+        sql += " WHERE LOWER(agent_id) LIKE ? "
+        params.append(f"%{query.lower()}%")
+    sql += " GROUP BY agent_id ORDER BY approved_spend DESC, agent_id ASC "
+
+    with get_connection() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_spend_by_vendor(query: str = "") -> List[Dict[str, Any]]:
+    sql = """
+        SELECT
+            vendor,
+            ROUND(SUM(CASE WHEN decision = 'APPROVED' THEN amount ELSE 0 END), 2) AS approved_spend,
+            SUM(CASE WHEN decision = 'BLOCKED' THEN 1 ELSE 0 END) AS blocked_attempts,
+            SUM(CASE WHEN decision = 'REVIEW_REQUIRED' THEN 1 ELSE 0 END) AS pending_reviews,
+            COUNT(*) AS total_events
+        FROM transactions
+    """
+    params: List[Any] = []
+    if query:
+        sql += " WHERE LOWER(vendor) LIKE ? "
+        params.append(f"%{query.lower()}%")
+    sql += " GROUP BY vendor ORDER BY approved_spend DESC, vendor ASC "
+
+    with get_connection() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_transactions(
+    query: str = "",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    decision: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    sql = """
+        SELECT id, agent_id, task, vendor, amount, category, purpose, decision, risk_score, reasons, created_at
+        FROM transactions
+        WHERE 1 = 1
+    """
+    params: List[Any] = []
+
+    if query:
+        sql += " AND (LOWER(agent_id) LIKE ? OR LOWER(vendor) LIKE ? OR LOWER(task) LIKE ?) "
+        match = f"%{query.lower()}%"
+        params.extend([match, match, match])
+
+    if decision:
+        sql += " AND decision = ? "
+        params.append(decision)
+
+    if start_date:
+        sql += " AND DATE(created_at) >= DATE(?) "
+        params.append(start_date)
+
+    if end_date:
+        sql += " AND DATE(created_at) <= DATE(?) "
+        params.append(end_date)
+
+    sql += " ORDER BY created_at DESC, id DESC "
+
+    with get_connection() as conn:
+        rows = conn.execute(sql, params).fetchall()
+
+    return [{**dict(row), "reasons": json.loads(row["reasons"])} for row in rows]
 
 
 def review_transaction(transaction_id: int, approved: bool) -> bool:

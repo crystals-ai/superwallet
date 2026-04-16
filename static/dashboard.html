@@ -3,18 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Agent Wallet Control</title>
+    <title>SuperWallet Control Center</title>
     <style>
       :root {
-        --bg: #f5efe4;
-        --panel: rgba(255, 252, 246, 0.94);
-        --text: #17211d;
-        --muted: #5f6b63;
-        --accent: #0e9f6e;
-        --danger: #d9485f;
-        --warn: #d89b2b;
-        --shadow: 0 20px 50px rgba(22, 30, 25, 0.12);
-        --border: rgba(23, 33, 29, 0.09);
+        --bg: #f2f5f9;
+        --shell: rgba(255, 255, 255, 0.78);
+        --panel: rgba(255, 255, 255, 0.94);
+        --panel-strong: #ffffff;
+        --text: #102034;
+        --muted: #6e7b8f;
+        --line: rgba(16, 32, 52, 0.08);
+        --shadow: 0 32px 80px rgba(16, 32, 52, 0.12);
+        --navy: #163a5f;
+        --sky: #3e89ff;
+        --teal: #10a37f;
+        --amber: #d59024;
+        --red: #dc4c64;
+        --chip: #eef4ff;
       }
 
       * {
@@ -27,77 +32,312 @@
         font-family: "Avenir Next", "Segoe UI", sans-serif;
         color: var(--text);
         background:
-          radial-gradient(circle at top left, rgba(14, 159, 110, 0.2), transparent 30%),
-          radial-gradient(circle at top right, rgba(216, 155, 43, 0.14), transparent 28%),
-          linear-gradient(180deg, #f9f4ea 0%, var(--bg) 100%);
+          radial-gradient(circle at top left, rgba(62, 137, 255, 0.22), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(16, 163, 127, 0.18), transparent 34%),
+          linear-gradient(180deg, #eff5ff 0%, var(--bg) 50%, #eef3f8 100%);
       }
 
-      .page {
-        max-width: 1180px;
-        margin: 0 auto;
-        padding: 32px 20px 48px;
-      }
-
-      h1 {
-        margin: 0;
-        font-size: clamp(2rem, 4vw, 3.5rem);
-        letter-spacing: -0.04em;
-      }
-
-      p.lead {
-        max-width: 760px;
-        margin: 12px 0 28px;
-        color: var(--muted);
-        font-size: 1.05rem;
-      }
-
-      .metrics {
+      .app-shell {
+        width: min(1420px, calc(100vw - 40px));
+        min-height: calc(100vh - 40px);
+        margin: 20px auto;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 16px;
-        margin-bottom: 20px;
-      }
-
-      .card,
-      .table-card {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 22px;
+        grid-template-columns: 280px minmax(0, 1fr);
+        background: var(--shell);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 28px;
         box-shadow: var(--shadow);
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(20px);
+        overflow: hidden;
       }
 
-      .card {
-        padding: 18px 20px;
+      .sidebar {
+        padding: 26px 20px;
+        background:
+          linear-gradient(180deg, rgba(22, 58, 95, 0.98) 0%, rgba(20, 48, 84, 0.98) 100%);
+        color: #f4f8ff;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 8px 8px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .brand-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #7dc4ff 0%, #7ef1d7 100%);
+        color: #0e2238;
+        font-weight: 800;
+        font-size: 1.1rem;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 1.25rem;
+        letter-spacing: -0.03em;
+      }
+
+      .brand p {
+        margin: 0;
+        color: rgba(244, 248, 255, 0.72);
+        line-height: 1.5;
+        font-size: 0.95rem;
+      }
+
+      .nav-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .nav-label {
+        padding: 0 8px;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: rgba(244, 248, 255, 0.52);
+      }
+
+      .nav-button {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-radius: 18px;
+        padding: 14px 14px;
+        text-align: left;
+        cursor: pointer;
+        transition: background 180ms ease, transform 180ms ease;
+      }
+
+      .nav-button:hover,
+      .nav-button.active {
+        background: rgba(255, 255, 255, 0.12);
+        transform: translateX(2px);
+      }
+
+      .nav-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 0.95rem;
+      }
+
+      .nav-copy strong,
+      .nav-copy span {
+        display: block;
+      }
+
+      .nav-copy strong {
+        font-size: 0.95rem;
+      }
+
+      .nav-copy span {
+        font-size: 0.82rem;
+        color: rgba(244, 248, 255, 0.64);
+        margin-top: 3px;
+        line-height: 1.35;
+      }
+
+      .sidebar-note {
+        margin-top: auto;
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+      }
+
+      .sidebar-note h2,
+      .sidebar-note p {
+        margin: 0;
+      }
+
+      .sidebar-note h2 {
+        font-size: 0.92rem;
+      }
+
+      .sidebar-note p {
+        margin-top: 8px;
+        color: rgba(244, 248, 255, 0.7);
+        line-height: 1.5;
+        font-size: 0.84rem;
+      }
+
+      .content {
+        padding: 26px;
+        overflow: auto;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 24px;
       }
 
       .eyebrow {
-        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(62, 137, 255, 0.1);
+        color: var(--sky);
         font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+
+      .title-block h2 {
+        margin: 14px 0 8px;
+        font-size: clamp(2rem, 4vw, 3.1rem);
+        line-height: 1;
+        letter-spacing: -0.05em;
+      }
+
+      .title-block p {
+        margin: 0;
+        color: var(--muted);
+        max-width: 720px;
+        line-height: 1.6;
+        font-size: 1rem;
+      }
+
+      .status-pulse {
+        min-width: 240px;
+        padding: 18px 20px;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #ffffff 0%, #edf5ff 100%);
+        border: 1px solid var(--line);
+        box-shadow: 0 20px 50px rgba(16, 32, 52, 0.08);
+      }
+
+      .status-pulse strong,
+      .status-pulse span {
+        display: block;
+      }
+
+      .status-pulse strong {
+        font-size: 1rem;
+      }
+
+      .status-pulse span {
+        margin-top: 6px;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 0.92rem;
+      }
+
+      .view {
+        display: none;
+      }
+
+      .view.active {
+        display: block;
+      }
+
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .metric-card,
+      .surface,
+      .highlight-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: 0 18px 40px rgba(16, 32, 52, 0.06);
+      }
+
+      .metric-card {
+        padding: 22px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .metric-card::after {
+        content: "";
+        position: absolute;
+        inset: auto -10% -55% auto;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(62, 137, 255, 0.08);
+      }
+
+      .metric-card .label {
+        color: var(--muted);
+        font-size: 0.84rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
       }
 
-      .metric {
-        margin-top: 8px;
-        font-size: 2rem;
-        font-weight: 700;
+      .metric-card .value {
+        margin-top: 12px;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        font-weight: 800;
+        letter-spacing: -0.04em;
       }
 
-      .grid {
+      .metric-card .caption {
+        position: relative;
+        z-index: 1;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      .overview-grid {
+        margin-top: 22px;
         display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 20px;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 18px;
       }
 
-      .table-card {
-        overflow: hidden;
+      .surface {
+        padding: 22px;
       }
 
-      .section-title {
-        padding: 18px 20px 0;
-        font-size: 1rem;
-        font-weight: 700;
+      .surface-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .surface-header h3 {
+        margin: 0;
+        font-size: 1.08rem;
+      }
+
+      .surface-header span {
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .table-shell {
+        overflow: auto;
       }
 
       table {
@@ -107,16 +347,18 @@
 
       th,
       td {
-        padding: 14px 20px;
+        padding: 14px 12px;
         text-align: left;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--line);
         vertical-align: top;
-        font-size: 0.95rem;
       }
 
       th {
         color: var(--muted);
-        font-weight: 600;
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 700;
       }
 
       tr:last-child td {
@@ -126,181 +368,811 @@
       .status {
         display: inline-flex;
         align-items: center;
-        padding: 6px 10px;
+        padding: 7px 12px;
         border-radius: 999px;
-        font-size: 0.76rem;
+        font-size: 0.77rem;
         font-weight: 700;
         letter-spacing: 0.03em;
       }
 
       .APPROVED {
-        background: rgba(14, 159, 110, 0.12);
-        color: var(--accent);
+        background: rgba(16, 163, 127, 0.12);
+        color: var(--teal);
       }
 
       .BLOCKED {
-        background: rgba(217, 72, 95, 0.12);
-        color: var(--danger);
+        background: rgba(220, 76, 100, 0.12);
+        color: var(--red);
       }
 
       .REVIEW_REQUIRED {
-        background: rgba(216, 155, 43, 0.16);
-        color: #9a6a08;
+        background: rgba(213, 144, 36, 0.14);
+        color: var(--amber);
       }
 
-      .reasons {
+      .muted {
         color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .highlight-card {
+        padding: 20px;
+      }
+
+      .highlight-card h4,
+      .highlight-card p {
+        margin: 0;
+      }
+
+      .highlight-card h4 {
+        font-size: 1rem;
+      }
+
+      .highlight-card p {
+        margin-top: 8px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar h3,
+      .toolbar p {
+        margin: 0;
+      }
+
+      .toolbar p {
+        margin-top: 6px;
+        color: var(--muted);
+      }
+
+      .controls {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .input,
+      .date-input,
+      .file-input {
+        min-width: 220px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--text);
+        font: inherit;
+        outline: none;
+      }
+
+      .input:focus,
+      .date-input:focus,
+      .file-input:focus {
+        border-color: rgba(62, 137, 255, 0.45);
+        box-shadow: 0 0 0 4px rgba(62, 137, 255, 0.12);
+      }
+
+      .button {
+        border: 0;
+        border-radius: 14px;
+        padding: 12px 16px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, #2f7cff 0%, #215ed1 100%);
+        color: white;
+        box-shadow: 0 12px 24px rgba(47, 124, 255, 0.24);
+      }
+
+      .button.secondary {
+        background: rgba(22, 58, 95, 0.08);
+        color: var(--navy);
+      }
+
+      .button.success {
+        background: rgba(16, 163, 127, 0.14);
+        color: var(--teal);
+      }
+
+      .button.danger {
+        background: rgba(220, 76, 100, 0.14);
+        color: var(--red);
+      }
+
+      .button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .search-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: var(--chip);
+        color: var(--navy);
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .transaction-meta {
+        color: var(--muted);
+        font-size: 0.88rem;
         line-height: 1.45;
       }
 
-      @media (max-width: 900px) {
-        .grid {
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .empty {
+        padding: 48px 18px;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .upload-grid {
+        display: grid;
+        grid-template-columns: 0.95fr 1.05fr;
+        gap: 18px;
+      }
+
+      .upload-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .upload-item {
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: #f7faff;
+        border: 1px solid rgba(16, 32, 52, 0.06);
+      }
+
+      .upload-item strong,
+      .upload-item span {
+        display: block;
+      }
+
+      .upload-item span {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .helper-list {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .footer-note {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      @media (max-width: 1160px) {
+        .metrics-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .overview-grid,
+        .upload-grid {
           grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 920px) {
+        .app-shell {
+          width: min(100vw, calc(100vw - 18px));
+          min-height: calc(100vh - 18px);
+          margin: 9px;
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          padding-bottom: 18px;
+        }
+
+        .content {
+          padding: 20px;
+        }
+
+        .topbar {
+          flex-direction: column;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .metrics-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .controls,
+        .toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .input,
+        .date-input,
+        .file-input {
+          min-width: 100%;
+          width: 100%;
         }
       }
     </style>
   </head>
   <body>
-    <div class="page">
-      <h1>Agent Wallet Control</h1>
-      <p class="lead">
-        Live spend visibility and payment firewall decisions for autonomous agents.
-        Trigger the CLI scenarios and watch approved spend, blocked attempts, and review
-        queue events update here.
-      </p>
-
-      <div class="metrics">
-        <div class="card">
-          <div class="eyebrow">Approved Spend</div>
-          <div class="metric" id="approved-spend">$0.00</div>
-        </div>
-        <div class="card">
-          <div class="eyebrow">Prevented Loss</div>
-          <div class="metric" id="prevented-loss">$0.00</div>
-        </div>
-        <div class="card">
-          <div class="eyebrow">Blocked Payments</div>
-          <div class="metric" id="blocked-count">0</div>
-        </div>
-        <div class="card">
-          <div class="eyebrow">Pending Review</div>
-          <div class="metric" id="pending-review">0</div>
-        </div>
-      </div>
-
-      <div class="grid">
-        <div class="table-card">
-          <div class="section-title">Recent Transactions</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Agent</th>
-                <th>Vendor</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Reasons</th>
-              </tr>
-            </thead>
-            <tbody id="recent-body"></tbody>
-          </table>
-        </div>
-
-        <div style="display: grid; gap: 20px;">
-          <div class="table-card">
-            <div class="section-title">Spend By Agent</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Agent</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody id="agent-body"></tbody>
-            </table>
-          </div>
-
-          <div class="table-card">
-            <div class="section-title">Spend By Vendor</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Vendor</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody id="vendor-body"></tbody>
-            </table>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">SS</div>
+          <div>
+            <h1>SuperWallet</h1>
+            <p>Control center for agent wallets, live approvals, and policy enforcement.</p>
           </div>
         </div>
-      </div>
+
+        <div class="nav-group">
+          <div class="nav-label">Navigation</div>
+          <button class="nav-button active" data-view-target="overview">
+            <div class="nav-icon">01</div>
+            <div class="nav-copy">
+              <strong>Overview</strong>
+              <span>Topline approved spend, prevented loss, and queue status.</span>
+            </div>
+          </button>
+          <button class="nav-button" data-view-target="agents">
+            <div class="nav-icon">02</div>
+            <div class="nav-copy">
+              <strong>Spend By Agent</strong>
+              <span>Search agents and inspect approved spend, blocks, and review load.</span>
+            </div>
+          </button>
+          <button class="nav-button" data-view-target="vendors">
+            <div class="nav-icon">03</div>
+            <div class="nav-copy">
+              <strong>Spend By Vendor</strong>
+              <span>Review vendor exposure with searchable totals and incidents.</span>
+            </div>
+          </button>
+          <button class="nav-button" data-view-target="reviews">
+            <div class="nav-icon">04</div>
+            <div class="nav-copy">
+              <strong>Pending Review</strong>
+              <span>Approve or block gray-area payments without leaving the dashboard.</span>
+            </div>
+          </button>
+          <button class="nav-button" data-view-target="transactions">
+            <div class="nav-icon">05</div>
+            <div class="nav-copy">
+              <strong>Transactions</strong>
+              <span>Filter the full ledger by date range, vendor, or agent.</span>
+            </div>
+          </button>
+          <button class="nav-button" data-view-target="policy">
+            <div class="nav-icon">06</div>
+            <div class="nav-copy">
+              <strong>Add Policy Documents</strong>
+              <span>Upload policy guidance the evaluator can apply to future decisions.</span>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <main class="content">
+        <div class="topbar">
+          <div class="title-block">
+            <h2>Hi OpenAI! Welcome to the SuperWallet Control Center.</h2>
+          </div>
+        </div>
+
+        <section class="view active" data-view="overview">
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="label">Total Transactions</div>
+              <div class="value" id="metric-total-transactions">0</div>
+              <div class="caption">Total number of transactions processed by the wallet firewall.</div>
+            </div>
+            <div class="metric-card">
+              <div class="label">Total Approved Spend</div>
+              <div class="value" id="metric-approved">$0.00</div>
+              <div class="caption">Money safely approved through the wallet firewall.</div>
+            </div>
+            <div class="metric-card">
+              <div class="label">Total Money Saved</div>
+              <div class="value" id="metric-prevented">$0.00</div>
+              <div class="caption">Money saved by intercepting malicious payments before execution.</div>
+            </div>
+            <div class="metric-card">
+              <div class="label">Number of Payments Blocked</div>
+              <div class="value" id="metric-blocked">0</div>
+              <div class="caption">Payments rejected for policy violations, task mismatch, or vendor risk.</div>
+            </div>
+            <div class="metric-card">
+              <div class="label">Payments Pending Review</div>
+              <div class="value" id="metric-review">0</div>
+              <div class="caption">Payments waiting on a human decision before any funds can move.</div>
+            </div>
+          </div>
+
+          <div class="overview-grid">
+            <div class="surface">
+              <div class="surface-header">
+                <div>
+                  <h3>Recent Activity</h3>
+                  <span>Latest payment intents and wallet decisions</span>
+                </div>
+              </div>
+              <div class="table-shell">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Transaction</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Risk</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overview-recent"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-view="agents">
+          <div class="surface">
+            <div class="toolbar">
+              <div>
+                <h3>Spend By Agent</h3>
+                <p>Search by agent name and inspect approved spend, blocked attempts, and pending reviews.</p>
+              </div>
+              <div class="controls">
+                <input class="input" id="agent-search" type="search" placeholder="Search by agent" />
+                <button class="button secondary" id="agent-refresh">Refresh</button>
+              </div>
+            </div>
+            <div class="table-shell">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Agent</th>
+                    <th>Approved Spend</th>
+                    <th>Blocked</th>
+                    <th>Pending Review</th>
+                    <th>Total Events</th>
+                  </tr>
+                </thead>
+                <tbody id="agent-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-view="vendors">
+          <div class="surface">
+            <div class="toolbar">
+              <div>
+                <h3>Spend By Vendor</h3>
+                <p>Search vendors to review where money is flowing and where risk is accumulating.</p>
+              </div>
+              <div class="controls">
+                <input class="input" id="vendor-search" type="search" placeholder="Search by vendor" />
+                <button class="button secondary" id="vendor-refresh">Refresh</button>
+              </div>
+            </div>
+            <div class="table-shell">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Vendor</th>
+                    <th>Approved Spend</th>
+                    <th>Blocked</th>
+                    <th>Pending Review</th>
+                    <th>Total Events</th>
+                  </tr>
+                </thead>
+                <tbody id="vendor-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-view="reviews">
+          <div class="surface">
+            <div class="toolbar">
+              <div>
+                <h3>Pending Review Queue</h3>
+                <p>Search by agent or vendor, then approve or block individual payments.</p>
+              </div>
+              <div class="controls">
+                <input class="input" id="review-search" type="search" placeholder="Search by agent or vendor" />
+                <button class="button secondary" id="review-refresh">Refresh</button>
+              </div>
+            </div>
+            <div class="table-shell">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Transaction</th>
+                    <th>Amount</th>
+                    <th>Reasons</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="review-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-view="transactions">
+          <div class="surface">
+            <div class="toolbar">
+              <div>
+                <h3>All Transactions</h3>
+                <p>Choose a date range and search the full ledger by agent, vendor, or task context.</p>
+              </div>
+              <div class="controls">
+                <input class="date-input" id="transaction-start" type="date" />
+                <input class="date-input" id="transaction-end" type="date" />
+                <input class="input" id="transaction-search" type="search" placeholder="Search by vendor or agent" />
+                <button class="button primary" id="transaction-apply">Apply Filters</button>
+              </div>
+            </div>
+            <div class="search-meta" id="transaction-meta"></div>
+            <div class="table-shell" style="margin-top: 14px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>Transaction</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Reasons</th>
+                  </tr>
+                </thead>
+                <tbody id="transaction-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-view="policy">
+          <div class="upload-grid">
+            <div class="surface">
+              <div class="toolbar">
+                <div>
+                  <h3>Add Policy Documents</h3>
+                  <p>Upload text or markdown rules that the evaluator can fold into future payment decisions.</p>
+                </div>
+              </div>
+              <div class="stack">
+                <input class="file-input" id="policy-file" type="file" accept=".txt,.md,.yaml,.yml" />
+                <button class="button primary" id="policy-upload">Upload Policy Document</button>
+                <div class="footer-note" id="policy-status">Accepted directive examples: <code>allow_vendor: SECData API</code>, <code>block_vendor: RiskyBroker</code>, <code>daily_limit: 80</code>.</div>
+              </div>
+            </div>
+
+            <div class="surface">
+              <div class="toolbar">
+                <div>
+                  <h3>Loaded Policy Documents</h3>
+                  <p>These files are available to the wallet evaluator during approval and blocking decisions.</p>
+                </div>
+                <button class="button secondary" id="policy-refresh">Refresh</button>
+              </div>
+              <div class="upload-list" id="policy-list"></div>
+              <div class="footer-note">
+                Use plain text directives in uploaded documents to extend allowlists, blocklists, categories,
+                and limits without editing the base YAML by hand.
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
 
     <script>
+      const state = {
+        activeView: "overview",
+      };
+
       function currency(value) {
         return new Intl.NumberFormat("en-US", {
           style: "currency",
           currency: "USD",
-        }).format(value || 0);
+        }).format(Number(value || 0));
       }
 
-      function renderRows(containerId, rows, renderer, emptyColspan = 5) {
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function renderEmpty(message, colspan) {
+        return `<tr><td class="empty" colspan="${colspan}">${escapeHtml(message)}</td></tr>`;
+      }
+
+      function renderTable(containerId, rows, markup, colspan, emptyMessage) {
         const container = document.getElementById(containerId);
-        container.innerHTML = rows.length
-          ? rows.map(renderer).join("")
-          : `<tr><td colspan="${emptyColspan}">No data yet. Run a CLI scenario to generate events.</td></tr>`;
+        container.innerHTML = rows.length ? rows.map(markup).join("") : renderEmpty(emptyMessage, colspan);
+      }
+
+      async function getJson(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Request failed: ${response.status}`);
+        }
+        return response.json();
+      }
+
+      function setActiveView(viewName) {
+        state.activeView = viewName;
+        document.querySelectorAll(".nav-button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.viewTarget === viewName);
+        });
+        document.querySelectorAll(".view").forEach((view) => {
+          view.classList.toggle("active", view.dataset.view === viewName);
+        });
+      }
+
+      async function loadOverview() {
+        const [summary, dashboard] = await Promise.all([
+          getJson("/api/summary"),
+          getJson("/api/dashboard"),
+        ]);
+        document.getElementById("metric-total-transactions").textContent = summary.total_transactions;
+        document.getElementById("metric-approved").textContent = currency(summary.approved_spend);
+        document.getElementById("metric-prevented").textContent = currency(summary.prevented_loss);
+        document.getElementById("metric-blocked").textContent = summary.blocked_count;
+        document.getElementById("metric-review").textContent = summary.pending_review_count;
+
+        renderTable(
+          "overview-recent",
+          dashboard.recent_transactions,
+          (row) => `
+            <tr>
+              <td>
+                <strong>${escapeHtml(row.agent_id)}</strong><br />
+                <span class="transaction-meta">${escapeHtml(row.vendor)}<br />${escapeHtml(row.task)}</span>
+              </td>
+              <td>${currency(row.amount)}</td>
+              <td><span class="status ${row.decision}">${escapeHtml(row.decision.replaceAll("_", " "))}</span></td>
+              <td>${row.risk_score}</td>
+            </tr>
+          `,
+          4,
+          "No activity yet. Trigger a CLI scenario to populate recent events."
+        );
+      }
+
+      async function loadAgents() {
+        const query = document.getElementById("agent-search").value.trim();
+        const data = await getJson(`/api/spend/agents?query=${encodeURIComponent(query)}`);
+        renderTable(
+          "agent-table",
+          data.items,
+          (row) => `
+            <tr>
+              <td><strong>${escapeHtml(row.agent_id)}</strong></td>
+              <td>${currency(row.approved_spend)}</td>
+              <td>${row.blocked_attempts}</td>
+              <td>${row.pending_reviews}</td>
+              <td>${row.total_events}</td>
+            </tr>
+          `,
+          5,
+          "No agents matched the current search."
+        );
+      }
+
+      async function loadVendors() {
+        const query = document.getElementById("vendor-search").value.trim();
+        const data = await getJson(`/api/spend/vendors?query=${encodeURIComponent(query)}`);
+        renderTable(
+          "vendor-table",
+          data.items,
+          (row) => `
+            <tr>
+              <td><strong>${escapeHtml(row.vendor)}</strong></td>
+              <td>${currency(row.approved_spend)}</td>
+              <td>${row.blocked_attempts}</td>
+              <td>${row.pending_reviews}</td>
+              <td>${row.total_events}</td>
+            </tr>
+          `,
+          5,
+          "No vendors matched the current search."
+        );
+      }
+
+      async function loadReviews() {
+        const query = document.getElementById("review-search").value.trim();
+        const data = await getJson(`/api/reviews?query=${encodeURIComponent(query)}`);
+        renderTable(
+          "review-table",
+          data.items,
+          (row) => `
+            <tr>
+              <td>
+                <strong>${escapeHtml(row.agent_id)}</strong><br />
+                <span class="transaction-meta">${escapeHtml(row.vendor)}<br />${escapeHtml(row.task)}</span>
+              </td>
+              <td>${currency(row.amount)}</td>
+              <td class="muted">${row.reasons.map((reason) => escapeHtml(reason)).join("<br />")}</td>
+              <td>
+                <div class="actions">
+                  <button class="button success" onclick="reviewTransaction(${row.id}, true)">Approve</button>
+                  <button class="button danger" onclick="reviewTransaction(${row.id}, false)">Block</button>
+                </div>
+              </td>
+            </tr>
+          `,
+          4,
+          "No payments are currently waiting for human review."
+        );
+      }
+
+      async function loadTransactions() {
+        const query = document.getElementById("transaction-search").value.trim();
+        const startDate = document.getElementById("transaction-start").value;
+        const endDate = document.getElementById("transaction-end").value;
+        const params = new URLSearchParams();
+
+        if (query) params.set("query", query);
+        if (startDate) params.set("start_date", startDate);
+        if (endDate) params.set("end_date", endDate);
+
+        const data = await getJson(`/api/transactions?${params.toString()}`);
+        const chips = [];
+        if (startDate) chips.push(`<span class="chip">From ${escapeHtml(startDate)}</span>`);
+        if (endDate) chips.push(`<span class="chip">To ${escapeHtml(endDate)}</span>`);
+        if (query) chips.push(`<span class="chip">Search: ${escapeHtml(query)}</span>`);
+        document.getElementById("transaction-meta").innerHTML = chips.join("");
+
+        renderTable(
+          "transaction-table",
+          data.items,
+          (row) => `
+            <tr>
+              <td>${escapeHtml(row.created_at)}</td>
+              <td>
+                <strong>${escapeHtml(row.agent_id)}</strong><br />
+                <span class="transaction-meta">${escapeHtml(row.vendor)}<br />${escapeHtml(row.task)}</span>
+              </td>
+              <td>${currency(row.amount)}</td>
+              <td><span class="status ${row.decision}">${escapeHtml(row.decision.replaceAll("_", " "))}</span></td>
+              <td class="muted">${row.reasons.map((reason) => escapeHtml(reason)).join("<br />")}</td>
+            </tr>
+          `,
+          5,
+          "No transactions matched the selected period or search."
+        );
+      }
+
+      async function loadPolicies() {
+        const data = await getJson("/api/policies/docs");
+        const container = document.getElementById("policy-list");
+        container.innerHTML = data.items.length
+          ? data.items.map((item) => `
+              <div class="upload-item">
+                <strong>${escapeHtml(item.name)}</strong>
+                <span>${Math.max(1, Math.round(item.size / 1024))} KB • Last updated ${new Date(item.updated_at * 1000).toLocaleString()}</span>
+              </div>
+            `).join("")
+          : `<div class="upload-item"><strong>No uploaded policy documents yet</strong><span>Add a file here to extend the evaluator without touching the base YAML.</span></div>`;
       }
 
       async function reviewTransaction(transactionId, approved) {
         await fetch(`/api/review/${transactionId}?approved=${approved}`, {
           method: "POST",
         });
-        await loadDashboard();
+        await refreshAll();
       }
 
-      async function loadDashboard() {
-        const response = await fetch("/api/dashboard");
-        const data = await response.json();
+      async function uploadPolicyDocument() {
+        const input = document.getElementById("policy-file");
+        const status = document.getElementById("policy-status");
+        const file = input.files[0];
 
-        document.getElementById("approved-spend").textContent = currency(data.summary.approved_spend);
-        document.getElementById("prevented-loss").textContent = currency(data.summary.prevented_loss);
-        document.getElementById("blocked-count").textContent = data.summary.blocked_count;
-        document.getElementById("pending-review").textContent = data.summary.pending_review_count;
+        if (!file) {
+          status.textContent = "Choose a policy file before uploading.";
+          return;
+        }
 
-        renderRows("recent-body", data.recent_transactions, (row) => `
-          <tr>
-            <td>${row.agent_id}<br><span class="reasons">${row.task}</span></td>
-            <td>${row.vendor}</td>
-            <td>${currency(row.amount)}</td>
-            <td><span class="status ${row.decision}">${row.decision}</span></td>
-            <td class="reasons">
-              ${row.reasons.join("<br>")}
-              ${row.decision === "REVIEW_REQUIRED" ? `
-                <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                  <button onclick="reviewTransaction(${row.id}, true)" style="border: 0; border-radius: 999px; padding: 8px 12px; background: #0e9f6e; color: white; cursor: pointer;">Approve</button>
-                  <button onclick="reviewTransaction(${row.id}, false)" style="border: 0; border-radius: 999px; padding: 8px 12px; background: #d9485f; color: white; cursor: pointer;">Block</button>
-                </div>
-              ` : ""}
-            </td>
-          </tr>
-        `);
+        const formData = new FormData();
+        formData.append("file", file);
+        status.textContent = "Uploading policy document...";
 
-        renderRows("agent-body", data.by_agent, (row) => `
-          <tr>
-            <td>${row.agent_id}</td>
-            <td>${currency(row.total)}</td>
-          </tr>
-        `, 2);
+        const response = await fetch("/api/policies/upload", {
+          method: "POST",
+          body: formData,
+        });
 
-        renderRows("vendor-body", data.by_vendor, (row) => `
-          <tr>
-            <td>${row.vendor}</td>
-            <td>${currency(row.total)}</td>
-          </tr>
-        `, 2);
+        if (!response.ok) {
+          status.textContent = "Upload failed. Please try again.";
+          return;
+        }
+
+        const payload = await response.json();
+        status.textContent = `${payload.filename} uploaded successfully. Future payment evaluations will include its directives.`;
+        input.value = "";
+        await loadPolicies();
       }
 
-      loadDashboard();
-      setInterval(loadDashboard, 2500);
+      async function refreshAll() {
+        await Promise.all([
+          loadOverview(),
+          loadAgents(),
+          loadVendors(),
+          loadReviews(),
+          loadTransactions(),
+          loadPolicies(),
+        ]);
+      }
+
+      document.querySelectorAll(".nav-button").forEach((button) => {
+        button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
+      });
+
+      document.getElementById("agent-refresh").addEventListener("click", loadAgents);
+      document.getElementById("vendor-refresh").addEventListener("click", loadVendors);
+      document.getElementById("review-refresh").addEventListener("click", loadReviews);
+      document.getElementById("transaction-apply").addEventListener("click", loadTransactions);
+      document.getElementById("policy-refresh").addEventListener("click", loadPolicies);
+      document.getElementById("policy-upload").addEventListener("click", uploadPolicyDocument);
+
+      document.getElementById("agent-search").addEventListener("input", loadAgents);
+      document.getElementById("vendor-search").addEventListener("input", loadVendors);
+      document.getElementById("review-search").addEventListener("input", loadReviews);
+
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("transaction-start").value = today;
+      document.getElementById("transaction-end").value = today;
+
+      refreshAll();
+      setInterval(refreshAll, 5000);
     </script>
   </body>
 </html>

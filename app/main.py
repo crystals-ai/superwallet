@@ -2,20 +2,26 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from typing import Optional
+
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 
 from app.agents.research_agent import run_research_agent
 from app.db.repo import (
     get_agent_history,
     get_dashboard_data,
+    get_spend_by_agent,
+    get_spend_by_vendor,
+    get_summary,
+    get_transactions,
     init_db,
     review_transaction,
     save_transaction,
 )
 from app.schemas import RunRequest, RunResponse
 from app.wallet.evaluator import evaluate_payment
-from app.wallet.policy_loader import load_policy
+from app.wallet.policy_loader import list_policy_documents, load_policy, save_policy_document
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -37,6 +43,58 @@ def serve_dashboard() -> FileResponse:
 @app.get("/api/dashboard")
 def dashboard_data() -> dict:
     return get_dashboard_data()
+
+
+@app.get("/api/summary")
+def summary_data() -> dict:
+    return get_summary()
+
+
+@app.get("/api/spend/agents")
+def spend_agents(query: str = Query(default="")) -> dict:
+    return {"items": get_spend_by_agent(query=query)}
+
+
+@app.get("/api/spend/vendors")
+def spend_vendors(query: str = Query(default="")) -> dict:
+    return {"items": get_spend_by_vendor(query=query)}
+
+
+@app.get("/api/reviews")
+def pending_reviews(query: str = Query(default="")) -> dict:
+    return {
+        "items": get_transactions(query=query, decision="REVIEW_REQUIRED"),
+    }
+
+
+@app.get("/api/transactions")
+def transactions(
+    query: str = Query(default=""),
+    start_date: Optional[str] = Query(default=None),
+    end_date: Optional[str] = Query(default=None),
+) -> dict:
+    return {
+        "items": get_transactions(
+            query=query,
+            start_date=start_date,
+            end_date=end_date,
+        )
+    }
+
+
+@app.get("/api/policies/docs")
+def policy_documents() -> dict:
+    return {"items": list_policy_documents()}
+
+
+@app.post("/api/policies/upload")
+async def upload_policy_document(file: UploadFile = File(...)) -> dict:
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+
+    destination = save_policy_document(file.filename or "policy.txt", content)
+    return {"ok": True, "filename": destination.name}
 
 
 @app.post("/run", response_model=RunResponse)
