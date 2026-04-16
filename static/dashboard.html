@@ -516,6 +516,11 @@
         flex: 1 1 360px;
       }
 
+      #review-search {
+        min-width: 360px;
+        flex: 1 1 360px;
+      }
+
       .button {
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 16px;
@@ -555,6 +560,20 @@
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
+      }
+
+      .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+      }
+
+      .pagination-status {
+        color: var(--muted);
+        font-size: 0.9rem;
       }
 
       .chip {
@@ -935,6 +954,11 @@
                 <tbody id="transaction-table"></tbody>
               </table>
             </div>
+            <div class="pagination">
+              <span class="pagination-status" id="transaction-pagination-status">Page 1 of 1</span>
+              <button class="button secondary" id="transaction-prev">Previous</button>
+              <button class="button secondary" id="transaction-next">Next</button>
+            </div>
           </div>
         </section>
 
@@ -977,6 +1001,9 @@
     <script>
       const state = {
         activeView: "overview",
+        transactionPage: 1,
+        transactionPageSize: 3,
+        transactionLastPage: 1,
       };
 
       function currency(value) {
@@ -1037,7 +1064,7 @@
 
         renderTable(
           "overview-recent",
-          dashboard.recent_transactions,
+          dashboard.recent_transactions.slice(0, 3),
           (row) => `
             <tr>
               <td>
@@ -1134,15 +1161,27 @@
         if (endDate) params.set("end_date", endDate);
 
         const data = await getJson(`/api/transactions?${params.toString()}`);
+        const items = data.items || [];
+        const totalPages = Math.max(1, Math.ceil(items.length / state.transactionPageSize));
+        if (state.transactionPage > totalPages) {
+          state.transactionPage = totalPages;
+        }
+        const startIndex = (state.transactionPage - 1) * state.transactionPageSize;
+        const paginatedItems = items.slice(startIndex, startIndex + state.transactionPageSize);
+
         const chips = [];
         if (startDate) chips.push(`<span class="chip">From ${escapeHtml(startDate)}</span>`);
         if (endDate) chips.push(`<span class="chip">To ${escapeHtml(endDate)}</span>`);
         if (query) chips.push(`<span class="chip">Search: ${escapeHtml(query)}</span>`);
         document.getElementById("transaction-meta").innerHTML = chips.join("");
+        state.transactionLastPage = totalPages;
+        document.getElementById("transaction-pagination-status").textContent = `Page ${state.transactionPage} of ${totalPages}`;
+        document.getElementById("transaction-prev").disabled = state.transactionPage <= 1;
+        document.getElementById("transaction-next").disabled = state.transactionPage >= totalPages;
 
         renderTable(
           "transaction-table",
-          data.items,
+          paginatedItems,
           (row) => `
             <tr>
               <td>${escapeHtml(row.created_at)}</td>
@@ -1229,7 +1268,22 @@
       document.getElementById("agent-refresh").addEventListener("click", loadAgents);
       document.getElementById("vendor-refresh").addEventListener("click", loadVendors);
       document.getElementById("review-refresh").addEventListener("click", loadReviews);
-      document.getElementById("transaction-apply").addEventListener("click", loadTransactions);
+      document.getElementById("transaction-apply").addEventListener("click", () => {
+        state.transactionPage = 1;
+        loadTransactions();
+      });
+      document.getElementById("transaction-prev").addEventListener("click", () => {
+        if (state.transactionPage > 1) {
+          state.transactionPage -= 1;
+          loadTransactions();
+        }
+      });
+      document.getElementById("transaction-next").addEventListener("click", () => {
+        if (state.transactionPage < state.transactionLastPage) {
+          state.transactionPage += 1;
+          loadTransactions();
+        }
+      });
       document.getElementById("policy-refresh").addEventListener("click", loadPolicies);
       document.getElementById("policy-upload").addEventListener("click", uploadPolicyDocument);
 
