@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 
-from app.agents.research_agent import run_research_agent
+from app.agents.demo_agents import SUPPORTED_AGENTS, run_demo_agent
 from app.db.repo import (
     get_agent_history,
     get_dashboard_data,
@@ -101,10 +101,10 @@ async def upload_policy_document(file: UploadFile = File(...)) -> dict:
 
 @app.post("/run", response_model=RunResponse)
 def run_agent(request: RunRequest) -> RunResponse:
-    if request.agent_id != "research-agent":
+    if request.agent_id not in SUPPORTED_AGENTS:
         raise HTTPException(status_code=404, detail="Unknown agent")
 
-    payment_intent = run_research_agent(request.agent_id, request.task)
+    payment_intent = run_demo_agent(request.agent_id, request.task)
     if payment_intent is None:
         return RunResponse(
             payment_intent=None,

@@ -41,15 +41,7 @@ def save_policy_document(filename: str, content: bytes) -> Path:
 
 def _default_policy() -> Dict[str, Any]:
     return {
-        "agents": {
-            "research-agent": {
-                "daily_limit": 50.0,
-                "per_transaction_limit": 20.0,
-                "allowed_categories": ["data_api", "web_search"],
-                "allowed_vendors": [],
-                "blocked_vendors": [],
-            }
-        },
+        "agents": {},
         "review_rules": {
             "new_vendor_requires_review": True,
             "risk_score_review_threshold": 0.5,
@@ -70,7 +62,8 @@ def _policy_document_paths() -> List[Path]:
 
 
 def _apply_policy_documents(policy: Dict[str, Any], paths: List[Path]) -> Dict[str, Any]:
-    agent_policy = policy["agents"].get("research-agent", {})
+    current_agent = "research-agent"
+    agent_policy = policy["agents"].setdefault(current_agent, _empty_agent_policy())
 
     for path in paths:
         if not path.exists() or not path.is_file():
@@ -81,7 +74,10 @@ def _apply_policy_documents(policy: Dict[str, Any], paths: List[Path]) -> Dict[s
                 continue
 
             key, value = parsed
-            if key == "allow_vendor":
+            if key == "agent":
+                current_agent = value
+                agent_policy = policy["agents"].setdefault(current_agent, _empty_agent_policy())
+            elif key == "allow_vendor":
                 agent_policy.setdefault("allowed_vendors", [])
                 if value not in agent_policy["allowed_vendors"]:
                     agent_policy["allowed_vendors"].append(value)
@@ -97,9 +93,23 @@ def _apply_policy_documents(policy: Dict[str, Any], paths: List[Path]) -> Dict[s
                 agent_policy["daily_limit"] = float(value)
             elif key == "per_transaction_limit":
                 agent_policy["per_transaction_limit"] = float(value)
-
-    policy["agents"]["research-agent"] = agent_policy
+            elif key == "transaction_count_review_threshold":
+                agent_policy["transaction_count_review_threshold"] = int(value)
+            elif key == "amount_review_threshold":
+                agent_policy["amount_review_threshold"] = float(value)
     return policy
+
+
+def _empty_agent_policy() -> Dict[str, Any]:
+    return {
+        "daily_limit": 0.0,
+        "per_transaction_limit": 0.0,
+        "allowed_categories": [],
+        "allowed_vendors": [],
+        "blocked_vendors": [],
+        "transaction_count_review_threshold": 0,
+        "amount_review_threshold": 0.0,
+    }
 
 
 def _parse_directive(line: str) -> Optional[Tuple[str, str]]:
@@ -111,11 +121,14 @@ def _parse_directive(line: str) -> Optional[Tuple[str, str]]:
     payload = value.strip()
 
     if directive in {
+        "agent",
         "allow_vendor",
         "block_vendor",
         "allow_category",
         "daily_limit",
         "per_transaction_limit",
+        "transaction_count_review_threshold",
+        "amount_review_threshold",
     } and payload:
         return directive, payload
     return None

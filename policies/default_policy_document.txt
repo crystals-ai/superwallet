@@ -1,8 +1,9 @@
-# SuperWallet default policy document
-# Upload documents in this same directive format to extend or override future payment decisions.
+# SpendShield default policy document
+# Each agent section can define its own approved vendors, blocklists, categories, and thresholds.
 
+agent: research-agent
 allow_vendor: SECData API
-allow_vendor: AlphaVantage
+allow_vendor: AlphaSense
 allow_vendor: SerpAPI
 block_vendor: Premium Alpha Trading Signals
 block_vendor: UnknownCryptoBot
@@ -10,3 +11,65 @@ allow_category: data_api
 allow_category: web_search
 daily_limit: 50
 per_transaction_limit: 20
+amount_review_threshold: 15
+transaction_count_review_threshold: 5
+
+agent: trading-agent
+allow_vendor: Bloomberg Terminal
+allow_vendor: Refinitiv Workspace
+allow_vendor: AlphaSense
+block_vendor: FlashTrade Crypto Bot
+block_vendor: UnknownCryptoBot
+allow_category: market_data
+allow_category: research_platform
+daily_limit: 150
+per_transaction_limit: 60
+amount_review_threshold: 40
+transaction_count_review_threshold: 6
+
+agent: compliance-agent
+allow_vendor: ComplyAdvantage
+allow_vendor: LexisNexis Bridger Insight XG
+allow_vendor: Chainalysis KYT
+block_vendor: ShadowMixer Intelligence
+allow_category: compliance_data
+allow_category: crypto_monitoring
+daily_limit: 120
+per_transaction_limit: 35
+amount_review_threshold: 25
+transaction_count_review_threshold: 8
+
+agent: legal-agent
+allow_vendor: LexisNexis
+allow_vendor: Westlaw
+allow_vendor: Practical Law
+block_vendor: InstantGiftCards
+allow_category: legal_research
+daily_limit: 140
+per_transaction_limit: 45
+amount_review_threshold: 30
+transaction_count_review_threshold: 6
+
+agent: sales-agent
+allow_vendor: ZoomInfo
+allow_vendor: Salesforce Data Cloud
+allow_vendor: Apollo.io
+block_vendor: BulkGiftNow
+allow_category: sales_intelligence
+allow_category: crm_enrichment
+daily_limit: 110
+per_transaction_limit: 50
+amount_review_threshold: 35
+transaction_count_review_threshold: 7
+
+agent: hr-agent
+allow_vendor: LinkedIn Recruiter
+allow_vendor: Workday
+allow_vendor: Checkr
+block_vendor: FastCryptoPayroll
+allow_category: recruiting_platform
+allow_category: hris
+daily_limit: 95
+per_transaction_limit: 40
+amount_review_threshold: 25
+transaction_count_review_threshold: 6

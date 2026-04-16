@@ -6,6 +6,79 @@ from typing import Any, Dict, List
 from app.schemas import PaymentIntent
 
 
+AGENT_CONTEXT_RULES = {
+    "research-agent": {
+        "vendors": {
+            "secdata api": ["sec filings", "earnings", "10-k", "10-q", "nvidia"],
+            "alphasense": ["dataset", "comparative analysis", "industry", "transcript", "research"],
+            "premium alpha trading signals": ["trading", "alpha", "signals"],
+        },
+        "categories": {
+            "data_api": ["sec", "filings", "dataset", "research", "analysis", "transcript"],
+            "web_search": ["search", "web", "lookup"],
+        },
+    },
+    "trading-agent": {
+        "vendors": {
+            "bloomberg terminal": ["market data", "terminal", "price feed", "equity", "fx", "trading"],
+            "alphasense": ["alternative data", "analyst transcript", "research"],
+            "flashtrade crypto bot": ["trade", "crypto", "wallet transfer"],
+        },
+        "categories": {
+            "market_data": ["market data", "price feed", "quote", "terminal", "trading"],
+            "research_platform": ["research", "alternative data", "analyst", "transcript"],
+            "trade_execution": ["execute trade", "trade", "wallet transfer"],
+        },
+    },
+    "compliance-agent": {
+        "vendors": {
+            "complyadvantage": ["sanctions", "kyc", "aml", "screening"],
+            "lexisnexis bridger insight xg": ["due diligence", "vendor risk", "screening", "compliance"],
+            "shadowmixer intelligence": ["wallet", "token mixer", "crypto"],
+        },
+        "categories": {
+            "compliance_data": ["sanctions", "kyc", "aml", "screening", "due diligence", "vendor risk"],
+            "crypto_monitoring": ["wallet", "crypto", "token mixer"],
+        },
+    },
+    "legal-agent": {
+        "vendors": {
+            "lexisnexis": ["case law", "litigation", "precedent", "legal research"],
+            "practical law": ["contract benchmark", "agreement", "clause", "benchmark"],
+            "instantgiftcards": ["gift card", "settlement"],
+        },
+        "categories": {
+            "legal_research": ["case law", "litigation", "precedent", "contract", "agreement", "clause"],
+            "gift_card": ["gift card", "settlement", "funds"],
+        },
+    },
+    "sales-agent": {
+        "vendors": {
+            "zoominfo": ["prospect", "lead list", "contact data", "pipeline"],
+            "salesforce data cloud": ["crm enrichment", "account scoring", "pipeline", "enrichment"],
+            "bulkgiftnow": ["gift card", "rewards", "incentives"],
+        },
+        "categories": {
+            "sales_intelligence": ["prospect", "lead", "contact data", "outreach", "pipeline"],
+            "crm_enrichment": ["crm enrichment", "account scoring", "pipeline", "enrichment"],
+            "gift_card": ["gift card", "rewards", "incentives"],
+        },
+    },
+    "hr-agent": {
+        "vendors": {
+            "linkedin recruiter": ["candidate", "recruiting", "background check", "sourcing"],
+            "workday": ["employee records", "benefits", "workday data", "workforce"],
+            "fastcryptopayroll": ["salary wire", "crypto payroll", "payroll"],
+        },
+        "categories": {
+            "recruiting_platform": ["candidate", "recruiting", "background check", "sourcing"],
+            "hris": ["employee records", "benefits", "workday", "workforce"],
+            "payroll": ["salary wire", "payroll", "compensation"],
+        },
+    },
+}
+
+
 def _is_new_vendor(intent: PaymentIntent, history: List[Dict[str, Any]]) -> bool:
     known_vendors = {row["vendor"] for row in history}
     return intent.vendor not in known_vendors
@@ -44,20 +117,22 @@ def _transaction_count_today(agent_id: str, history: List[Dict[str, Any]]) -> in
 def _task_matches_payment(task: str, intent: PaymentIntent) -> bool:
     task_l = task.lower()
     vendor_l = intent.vendor.lower()
-
-    if "sec filings" in task_l and "secdata" in vendor_l:
-        return True
-
-    if ("dataset" in task_l or "comparative analysis" in task_l) and intent.category == "data_api":
-        return True
-
-    if "premium alpha" in vendor_l and "sec filings" in task_l:
-        return False
+    agent_rules = AGENT_CONTEXT_RULES.get(intent.agent_id, {})
+    vendor_keywords = agent_rules.get("vendors", {})
+    category_keywords = agent_rules.get("categories", {})
 
     if "ignore prior instructions" in task_l:
         return False
 
-    return intent.category in {"data_api", "web_search"}
+    if vendor_l in vendor_keywords:
+        if any(keyword in task_l for keyword in vendor_keywords[vendor_l]):
+            return True
+
+    if intent.category in category_keywords:
+        if any(keyword in task_l for keyword in category_keywords[intent.category]):
+            return True
+
+    return False
 
 
 def evaluate_payment(
@@ -68,7 +143,13 @@ def evaluate_payment(
     reasons: List[str] = []
     risk_score = 0.0
 
-    agent_policy = policy["agents"][intent.agent_id]
+    agent_policy = policy["agents"].get(intent.agent_id)
+    if agent_policy is None:
+        return _decision(
+            "BLOCKED",
+            [f"No policy found for agent '{intent.agent_id}'"],
+            0.99,
+        )
     current_spend = _spend_today(intent.agent_id, history)
 
     if intent.vendor in agent_policy.get("blocked_vendors", []):
@@ -127,11 +208,15 @@ def evaluate_payment(
         return _decision("BLOCKED", reasons, risk_score)
 
     review_rules = policy["review_rules"]
-    amt_review = float(review_rules.get("amount_review_threshold") or 0)
+    amt_review = float(agent_policy.get("amount_review_threshold") or review_rules.get("amount_review_threshold") or 0)
     if amt_review > 0 and intent.amount >= amt_review:
         return _decision("REVIEW_REQUIRED", reasons, max(risk_score, 0.55))
 
-    velocity_cap = int(review_rules.get("daily_payment_count_review_threshold") or 0)
+    velocity_cap = int(
+        agent_policy.get("transaction_count_review_threshold")
+        or review_rules.get("daily_payment_count_review_threshold")
+        or 0
+    )
     if velocity_cap > 0 and _transaction_count_today(intent.agent_id, history) >= velocity_cap:
         return _decision("REVIEW_REQUIRED", reasons, max(risk_score, 0.55))
 

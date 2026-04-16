@@ -821,7 +821,7 @@
             <div class="toolbar">
               <div>
                 <h3>Spend By Agent</h3>
-                <p>Search by agent name to inspect approved spend, blocked attempts, pending reviews, and total wallet events.</p>
+                <p>See the total spend approved per agent.</p>
               </div>
               <div class="controls">
                 <input class="input" id="agent-search" type="search" placeholder="Search by agent" />
@@ -850,7 +850,7 @@
             <div class="toolbar">
               <div>
                 <h3>Spend By Vendor</h3>
-                <p>Search by vendor to understand approved spend and how often the firewall intervenes.</p>
+                <p>See the total spend approved per vendor</p>
               </div>
               <div class="controls">
                 <input class="input" id="vendor-search" type="search" placeholder="Search by vendor" />
@@ -879,7 +879,7 @@
             <div class="toolbar">
               <div>
                 <h3>Pending Review Queue</h3>
-                <p>Search by vendor or agent, then resolve individual payments directly from the dashboard.</p>
+                <p>Resolve ambiguous payments by agent or vendor.</p>
               </div>
               <div class="controls">
                 <input class="input" id="review-search" type="search" placeholder="Search by vendor or agent" />
@@ -907,7 +907,7 @@
             <div class="toolbar">
               <div>
                 <h3>All Transactions</h3>
-                <p>Choose a date range and search by vendor, agent, or task to inspect the full ledger.</p>
+                <p>Choose a date range to see transactions by vendor, agent and purpose.</p>
               </div>
               <div class="controls">
                 <input class="date-input" id="transaction-start" type="date" />
@@ -916,6 +916,7 @@
                 <button class="button primary" id="transaction-apply">Apply Filters</button>
               </div>
             </div>
+            <br>
             <div class="search-meta" id="transaction-meta"></div>
             <div class="table-shell" style="margin-top: 14px;">
               <table>
