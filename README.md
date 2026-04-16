@@ -9,6 +9,7 @@ A hackathon-ready demo that shows how an AI agent can raise payment requests, ro
 - SQLite-backed transaction history and dashboard metrics
 - CLI to trigger agent runs
 - FastAPI backend with a lightweight dashboard
+- Optional LangChain integration that uses the same approval pipeline
 
 ## Demo Flow
 
@@ -28,7 +29,9 @@ app/
   main.py
   schemas.py
 policies/
-  wallet_policy.yaml
+  default_policy_document.txt
+examples/
+  langchain_wallet_agent.py
 static/
   dashboard.html
 ```
@@ -80,3 +83,34 @@ python3 -m app.cli run research-agent --task "Purchase new financial dataset for
 - Approved transactions count toward spend metrics.
 - Blocked transactions count toward prevented loss.
 - Review-required transactions show up in the dashboard queue until approved or denied.
+
+## LangChain Integration
+
+The current CLI and dashboard flow is unchanged. LangChain support is added as an optional path through:
+
+```text
+POST /api/payments/evaluate
+```
+
+That endpoint accepts a full payment intent and runs it through the same evaluator, database logging, and dashboard updates as the built-in demo agents.
+
+### Compatibility
+
+This repo's main demo currently runs in Python 3.9, while modern LangChain requires Python 3.10+. Use a separate environment for the LangChain example so the existing implementation stays stable.
+
+### Optional Setup
+
+```bash
+python3.10 -m venv .venv-langchain
+source .venv-langchain/bin/activate
+pip install -r requirements-langchain.txt
+```
+
+Then, with this FastAPI app already running, execute:
+
+```bash
+export OPENAI_API_KEY=your_key_here
+python examples/langchain_wallet_agent.py
+```
+
+The example LangChain agent requests payment approval via the local SpendShield API before using a paid vendor.

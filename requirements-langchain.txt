@@ -1,0 +1,5 @@
+# Optional LangChain integration dependencies.
+# Install these in a separate Python 3.10+ virtual environment so the current Python 3.9 demo remains unchanged.
+langchain>=1.0,<2.0
+langchain-openai>=1.0,<2.0
+requests>=2.32,<3.0

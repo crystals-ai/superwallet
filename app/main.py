@@ -19,7 +19,7 @@ from app.db.repo import (
     review_transaction,
     save_transaction,
 )
-from app.schemas import RunRequest, RunResponse
+from app.schemas import PaymentIntent, RunRequest, RunResponse
 from app.wallet.evaluator import evaluate_payment
 from app.wallet.policy_loader import list_policy_documents, load_policy, save_policy_document
 
@@ -28,6 +28,20 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 STATIC_DIR = BASE_DIR / "static"
 
 app = FastAPI(title="Agent Wallet Control Demo")
+
+
+def _evaluate_payment_intent(payment_intent: PaymentIntent) -> RunResponse:
+    policy = load_policy()
+    history = get_agent_history(payment_intent.agent_id)
+    evaluation = evaluate_payment(payment_intent, policy, history)
+    save_transaction(payment_intent, evaluation)
+
+    return RunResponse(
+        payment_intent=payment_intent,
+        decision=evaluation["decision"],
+        reasons=evaluation["reasons"],
+        risk_score=evaluation["risk_score"],
+    )
 
 
 @app.on_event("startup")
@@ -99,6 +113,11 @@ async def upload_policy_document(file: UploadFile = File(...)) -> dict:
     return {"ok": True, "filename": destination.name}
 
 
+@app.post("/api/payments/evaluate", response_model=RunResponse)
+def evaluate_payment_request(payment_intent: PaymentIntent) -> RunResponse:
+    return _evaluate_payment_intent(payment_intent)
+
+
 @app.post("/run", response_model=RunResponse)
 def run_agent(request: RunRequest) -> RunResponse:
     if request.agent_id not in SUPPORTED_AGENTS:
@@ -113,17 +132,7 @@ def run_agent(request: RunRequest) -> RunResponse:
             risk_score=0.0,
         )
 
-    policy = load_policy()
-    history = get_agent_history(request.agent_id)
-    evaluation = evaluate_payment(payment_intent, policy, history)
-    save_transaction(payment_intent, evaluation)
-
-    return RunResponse(
-        payment_intent=payment_intent,
-        decision=evaluation["decision"],
-        reasons=evaluation["reasons"],
-        risk_score=evaluation["risk_score"],
-    )
+    return _evaluate_payment_intent(payment_intent)
 
 
 @app.post("/api/review/{transaction_id}")
