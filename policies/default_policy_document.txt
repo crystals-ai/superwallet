@@ -1,0 +1,12 @@
+# SuperWallet default policy document
+# Upload documents in this same directive format to extend or override future payment decisions.
+
+allow_vendor: SECData API
+allow_vendor: AlphaVantage
+allow_vendor: SerpAPI
+block_vendor: Premium Alpha Trading Signals
+block_vendor: UnknownCryptoBot
+allow_category: data_api
+allow_category: web_search
+daily_limit: 50
+per_transaction_limit: 20

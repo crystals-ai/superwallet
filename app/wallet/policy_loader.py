@@ -4,33 +4,30 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import yaml
-
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-POLICY_PATH = BASE_DIR / "policies" / "wallet_policy.yaml"
+BASE_POLICY_DOC_PATH = BASE_DIR / "policies" / "default_policy_document.txt"
 UPLOADS_DIR = BASE_DIR / "policies" / "uploads"
 
 
 def load_policy() -> Dict[str, Any]:
-    with POLICY_PATH.open("r", encoding="utf-8") as handle:
-        policy = yaml.safe_load(handle)
-    return _apply_uploaded_policy_documents(policy)
+    policy = _default_policy()
+    return _apply_policy_documents(policy, _policy_document_paths())
 
 
 def list_policy_documents() -> List[Dict[str, Any]]:
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
     documents: List[Dict[str, Any]] = []
-    for path in sorted(UPLOADS_DIR.iterdir(), reverse=True):
-        if path.is_file():
-            stat = path.stat()
-            documents.append(
-                {
-                    "name": path.name,
-                    "size": stat.st_size,
-                    "updated_at": stat.st_mtime,
-                }
-            )
+    for path in reversed(_policy_document_paths()):
+        stat = path.stat()
+        documents.append(
+            {
+                "name": path.name,
+                "size": stat.st_size,
+                "updated_at": stat.st_mtime,
+                "source": "bundled" if path == BASE_POLICY_DOC_PATH else "uploaded",
+            }
+        )
     return documents
 
 
@@ -42,12 +39,41 @@ def save_policy_document(filename: str, content: bytes) -> Path:
     return destination
 
 
-def _apply_uploaded_policy_documents(policy: Dict[str, Any]) -> Dict[str, Any]:
+def _default_policy() -> Dict[str, Any]:
+    return {
+        "agents": {
+            "research-agent": {
+                "daily_limit": 50.0,
+                "per_transaction_limit": 20.0,
+                "allowed_categories": ["data_api", "web_search"],
+                "allowed_vendors": [],
+                "blocked_vendors": [],
+            }
+        },
+        "review_rules": {
+            "new_vendor_requires_review": True,
+            "risk_score_review_threshold": 0.5,
+        },
+        "block_rules": {
+            "semantic_mismatch_blocks": True,
+            "over_limit_blocks": True,
+            "blocklisted_vendor_blocks": True,
+        },
+    }
+
+
+def _policy_document_paths() -> List[Path]:
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    paths = [BASE_POLICY_DOC_PATH]
+    paths.extend(sorted(path for path in UPLOADS_DIR.iterdir() if path.is_file()))
+    return paths
+
+
+def _apply_policy_documents(policy: Dict[str, Any], paths: List[Path]) -> Dict[str, Any]:
     agent_policy = policy["agents"].get("research-agent", {})
 
-    for path in sorted(UPLOADS_DIR.iterdir()):
-        if not path.is_file():
+    for path in paths:
+        if not path.exists() or not path.is_file():
             continue
         for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
             parsed = _parse_directive(line)

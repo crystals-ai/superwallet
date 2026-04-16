@@ -47,7 +47,9 @@ def dashboard_data() -> dict:
 
 @app.get("/api/summary")
 def summary_data() -> dict:
-    return get_summary()
+    summary = get_summary()
+    summary["policy_docs_count"] = len(list_policy_documents())
+    return summary
 
 
 @app.get("/api/spend/agents")

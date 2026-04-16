@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from app.schemas import PaymentIntent
@@ -16,6 +17,28 @@ def _spend_today(agent_id: str, history: List[Dict[str, Any]]) -> float:
         for row in history
         if row["agent_id"] == agent_id and row["decision"] == "APPROVED"
     )
+
+
+def _transaction_count_today(agent_id: str, history: List[Dict[str, Any]]) -> int:
+    today = datetime.now(timezone.utc).date()
+    count = 0
+    for row in history:
+        if row["agent_id"] != agent_id:
+            continue
+        raw = row.get("created_at")
+        if raw is None:
+            continue
+        try:
+            text = raw if isinstance(raw, str) else str(raw)
+            if "T" in text:
+                day = datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+            else:
+                day = datetime.strptime(text[:10], "%Y-%m-%d").date()
+        except (TypeError, ValueError):
+            continue
+        if day == today:
+            count += 1
+    return count
 
 
 def _task_matches_payment(task: str, intent: PaymentIntent) -> bool:
@@ -93,14 +116,33 @@ def evaluate_payment(
     ):
         return _decision("BLOCKED", reasons, risk_score)
 
+    if policy["block_rules"].get("disallowed_category_blocks") and (
+        "Category is not allowed for this agent" in reasons
+    ):
+        return _decision("BLOCKED", reasons, risk_score)
+
+    if policy["block_rules"].get("non_allowlisted_vendor_blocks") and (
+        "Vendor is not on the allowlist" in reasons
+    ):
+        return _decision("BLOCKED", reasons, risk_score)
+
+    review_rules = policy["review_rules"]
+    amt_review = float(review_rules.get("amount_review_threshold") or 0)
+    if amt_review > 0 and intent.amount >= amt_review:
+        return _decision("REVIEW_REQUIRED", reasons, max(risk_score, 0.55))
+
+    velocity_cap = int(review_rules.get("daily_payment_count_review_threshold") or 0)
+    if velocity_cap > 0 and _transaction_count_today(intent.agent_id, history) >= velocity_cap:
+        return _decision("REVIEW_REQUIRED", reasons, max(risk_score, 0.55))
+
     if (
-        policy["review_rules"]["new_vendor_requires_review"]
+        review_rules["new_vendor_requires_review"]
         and is_new_vendor
         and intent.vendor not in agent_policy.get("allowed_vendors", [])
     ):
         return _decision("REVIEW_REQUIRED", reasons, max(risk_score, 0.55))
 
-    if risk_score >= float(policy["review_rules"]["risk_score_review_threshold"]):
+    if risk_score >= float(review_rules["risk_score_review_threshold"]):
         return _decision("REVIEW_REQUIRED", reasons, risk_score)
 
     return _decision(

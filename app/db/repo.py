@@ -140,7 +140,8 @@ def get_summary() -> Dict[str, Any]:
                 COALESCE(SUM(CASE WHEN decision = 'BLOCKED' THEN amount ELSE 0 END), 0) AS prevented_loss,
                 COALESCE(SUM(CASE WHEN decision = 'BLOCKED' THEN 1 ELSE 0 END), 0) AS blocked_count,
                 COALESCE(SUM(CASE WHEN decision = 'REVIEW_REQUIRED' THEN 1 ELSE 0 END), 0) AS pending_review_count,
-                COALESCE(COUNT(*), 0) AS total_transactions
+                COALESCE(COUNT(*), 0) AS total_transactions,
+                COALESCE(COUNT(DISTINCT agent_id), 0) AS agent_count
             FROM transactions
             """
         ).fetchone()
