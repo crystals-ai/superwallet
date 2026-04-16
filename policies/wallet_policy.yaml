@@ -1,0 +1,23 @@
+agents:
+  research-agent:
+    daily_limit: 50
+    per_transaction_limit: 20
+    allowed_categories:
+      - data_api
+      - web_search
+    allowed_vendors:
+      - SECData API
+      - AlphaVantage
+      - SerpAPI
+    blocked_vendors:
+      - Premium Alpha Trading Signals
+      - UnknownCryptoBot
+
+review_rules:
+  new_vendor_requires_review: true
+  risk_score_review_threshold: 0.5
+
+block_rules:
+  semantic_mismatch_blocks: true
+  over_limit_blocks: true
+  blocklisted_vendor_blocks: true

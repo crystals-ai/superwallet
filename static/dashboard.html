@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Wallet Control</title>
+    <style>
+      :root {
+        --bg: #f5efe4;
+        --panel: rgba(255, 252, 246, 0.94);
+        --text: #17211d;
+        --muted: #5f6b63;
+        --accent: #0e9f6e;
+        --danger: #d9485f;
+        --warn: #d89b2b;
+        --shadow: 0 20px 50px rgba(22, 30, 25, 0.12);
+        --border: rgba(23, 33, 29, 0.09);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(14, 159, 110, 0.2), transparent 30%),
+          radial-gradient(circle at top right, rgba(216, 155, 43, 0.14), transparent 28%),
+          linear-gradient(180deg, #f9f4ea 0%, var(--bg) 100%);
+      }
+
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3.5rem);
+        letter-spacing: -0.04em;
+      }
+
+      p.lead {
+        max-width: 760px;
+        margin: 12px 0 28px;
+        color: var(--muted);
+        font-size: 1.05rem;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .card,
+      .table-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .card {
+        padding: 18px 20px;
+      }
+
+      .eyebrow {
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .metric {
+        margin-top: 8px;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 20px;
+      }
+
+      .table-card {
+        overflow: hidden;
+      }
+
+      .section-title {
+        padding: 18px 20px 0;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 14px 20px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+        font-size: 0.95rem;
+      }
+
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+      }
+
+      .APPROVED {
+        background: rgba(14, 159, 110, 0.12);
+        color: var(--accent);
+      }
+
+      .BLOCKED {
+        background: rgba(217, 72, 95, 0.12);
+        color: var(--danger);
+      }
+
+      .REVIEW_REQUIRED {
+        background: rgba(216, 155, 43, 0.16);
+        color: #9a6a08;
+      }
+
+      .reasons {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <h1>Agent Wallet Control</h1>
+      <p class="lead">
+        Live spend visibility and payment firewall decisions for autonomous agents.
+        Trigger the CLI scenarios and watch approved spend, blocked attempts, and review
+        queue events update here.
+      </p>
+
+      <div class="metrics">
+        <div class="card">
+          <div class="eyebrow">Approved Spend</div>
+          <div class="metric" id="approved-spend">$0.00</div>
+        </div>
+        <div class="card">
+          <div class="eyebrow">Prevented Loss</div>
+          <div class="metric" id="prevented-loss">$0.00</div>
+        </div>
+        <div class="card">
+          <div class="eyebrow">Blocked Payments</div>
+          <div class="metric" id="blocked-count">0</div>
+        </div>
+        <div class="card">
+          <div class="eyebrow">Pending Review</div>
+          <div class="metric" id="pending-review">0</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="table-card">
+          <div class="section-title">Recent Transactions</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Agent</th>
+                <th>Vendor</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Reasons</th>
+              </tr>
+            </thead>
+            <tbody id="recent-body"></tbody>
+          </table>
+        </div>
+
+        <div style="display: grid; gap: 20px;">
+          <div class="table-card">
+            <div class="section-title">Spend By Agent</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Agent</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="agent-body"></tbody>
+            </table>
+          </div>
+
+          <div class="table-card">
+            <div class="section-title">Spend By Vendor</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Vendor</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="vendor-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function currency(value) {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(value || 0);
+      }
+
+      function renderRows(containerId, rows, renderer, emptyColspan = 5) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = rows.length
+          ? rows.map(renderer).join("")
+          : `<tr><td colspan="${emptyColspan}">No data yet. Run a CLI scenario to generate events.</td></tr>`;
+      }
+
+      async function reviewTransaction(transactionId, approved) {
+        await fetch(`/api/review/${transactionId}?approved=${approved}`, {
+          method: "POST",
+        });
+        await loadDashboard();
+      }
+
+      async function loadDashboard() {
+        const response = await fetch("/api/dashboard");
+        const data = await response.json();
+
+        document.getElementById("approved-spend").textContent = currency(data.summary.approved_spend);
+        document.getElementById("prevented-loss").textContent = currency(data.summary.prevented_loss);
+        document.getElementById("blocked-count").textContent = data.summary.blocked_count;
+        document.getElementById("pending-review").textContent = data.summary.pending_review_count;
+
+        renderRows("recent-body", data.recent_transactions, (row) => `
+          <tr>
+            <td>${row.agent_id}<br><span class="reasons">${row.task}</span></td>
+            <td>${row.vendor}</td>
+            <td>${currency(row.amount)}</td>
+            <td><span class="status ${row.decision}">${row.decision}</span></td>
+            <td class="reasons">
+              ${row.reasons.join("<br>")}
+              ${row.decision === "REVIEW_REQUIRED" ? `
+                <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button onclick="reviewTransaction(${row.id}, true)" style="border: 0; border-radius: 999px; padding: 8px 12px; background: #0e9f6e; color: white; cursor: pointer;">Approve</button>
+                  <button onclick="reviewTransaction(${row.id}, false)" style="border: 0; border-radius: 999px; padding: 8px 12px; background: #d9485f; color: white; cursor: pointer;">Block</button>
+                </div>
+              ` : ""}
+            </td>
+          </tr>
+        `);
+
+        renderRows("agent-body", data.by_agent, (row) => `
+          <tr>
+            <td>${row.agent_id}</td>
+            <td>${currency(row.total)}</td>
+          </tr>
+        `, 2);
+
+        renderRows("vendor-body", data.by_vendor, (row) => `
+          <tr>
+            <td>${row.vendor}</td>
+            <td>${currency(row.total)}</td>
+          </tr>
+        `, 2);
+      }
+
+      loadDashboard();
+      setInterval(loadDashboard, 2500);
+    </script>
+  </body>
+</html>
